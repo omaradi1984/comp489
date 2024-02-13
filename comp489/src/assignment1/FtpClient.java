@@ -32,7 +32,7 @@ public class FtpClient {
 
 	public static void main(String[] args) {
 		// TODO Auto-generated method stub
-
+		//This is a comment
 		// Setting variables from arguments
 		getInput(args);
 
