@@ -14,7 +14,8 @@ import java.net.URL;
 public class HybridProxyServer {
 	/**
 	 * @param argument
-	 *       this is a comment     PORT is a port number the proxy server will listen to.
+	 * PORT is a port number the proxy server will listen to.
+	 * Address is the IP address that the proxy server should listen to, if not defined, then server will listen to IP addresses of all interfaces.
 	 */
 	private static int PORT = 0;
 	private static String ADDRESS = null;
@@ -24,7 +25,7 @@ public class HybridProxyServer {
 
 		if (args.length == 0) {
 			System.out.println(
-					"Please provide a valid port number (mandatory) and host address (optional) to run the proxy server, "
+					"Please provide a valid port number (mandatory) and if applicable IP address to run the proxy server, "
 							+ "e.g. java hybridproxyserver.java 6000 192.168.0.2");
 			System.exit(1);
 		}
@@ -89,10 +90,14 @@ public class HybridProxyServer {
 
                     // Forward the client's request to the server
                     connection.setRequestMethod("GET");
+                    connection.connect();                    
+                    
                     int responseCode = connection.getResponseCode();
+                    System.out.println("response code: " + responseCode);
+                    String responseMessage = connection.getResponseMessage();
+                    System.out.println("response message: " + responseMessage);
                     String contentType = connection.getContentType();
                     System.out.println(responseCode + " " + contentType);
-                    String responseMessage = connection.getResponseMessage();
                     InputStream serverInput = connection.getInputStream();
 
                     // Send the server's response back to the client
@@ -144,7 +149,7 @@ public class HybridProxyServer {
  * int num = 0; byte[] bArry = new byte[1024]; num = input.read(bArry); String
  * message = new String(bArry, 0, num);
  * 
- * System.out.println("Message from client:\n" + message);
+ * SystemBSZS.println("Message from client:\n" + message);
  * 
  * URL url = new URL(message);
  * 
