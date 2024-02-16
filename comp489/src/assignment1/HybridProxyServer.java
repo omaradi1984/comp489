@@ -10,6 +10,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.InetAddress;
+import java.net.MalformedURLException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.URL;
@@ -118,6 +119,7 @@ public class HybridProxyServer {
 		}
 
 		private void forwardData(InputStream input, OutputStream output) {
+			
 			byte[] buffer = new byte[4096];
 			int read;
 
@@ -136,20 +138,33 @@ public class HybridProxyServer {
 		// TODO Auto-generated method stub
 		Object[] objectArray = new Object[3];
 		InputStream input = clientSocket.getInputStream();
-		DataInputStream in = new DataInputStream(input);
-		byte[] array = new byte[in.readInt()];
+		
+		byte[] array = new byte[1024];
 		int bytesRead = input.read(array);
 		
 		
 		String request = new String(array, 0, bytesRead);
-		String firstLine = request.split(" ")[1];
-		URL url = new URL(firstLine);
+		String firstLine = "";
+		boolean httpsFlag = request.contains(":443");
+		if(httpsFlag == true)
+			firstLine = request.split(" ")[1].split(":")[0];
+		else	
+			firstLine = request.split(" ")[1];
+		System.out.println(firstLine);
+		System.out.println(httpsFlag);
+		URL url = null;
+		try {
+			if(httpsFlag == true)
+				url = new URL("https://"+firstLine);
+			url = new URL(firstLine);
+		} catch (MalformedURLException e) {
+			// TODO Auto-generated catch block
+			OutputStream out = clientSocket.getOutputStream();
+			out.write("Unknown protocol".getBytes());
+			e.printStackTrace();
+		}
 		String host = url.getHost();
 		int port = url.getPort();
-		
-		System.out.println("request: " + request);
-		System.out.println("host: " + host);
-		System.out.println("port: " + port);
 		
 		InputStream stream = new ByteArrayInputStream(request.getBytes
                 (Charset.forName("UTF-8")));
@@ -158,7 +173,11 @@ public class HybridProxyServer {
 		objectArray[1] = host;
 		
 		if(port == -1)
-			port = 80;
+			if(httpsFlag == true)
+				port = 443;
+			else
+				port = 80;
+		System.out.println(port);
 		objectArray[2] = port;
 		
 		return objectArray;

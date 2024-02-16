@@ -10,14 +10,15 @@ import java.net.InetSocketAddress;
 import java.net.MalformedURLException;
 import java.net.Proxy;
 import java.net.Proxy.Type;
+import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.UUID;
-import java.net.URL;
+
+import javax.net.ssl.HttpsURLConnection;
 
 public class PocWebClient {
 	/**
@@ -27,7 +28,6 @@ public class PocWebClient {
 			FTP_USERNAME = "", FTP_PASSWORD = "", FILE_PATH = null;
 
 	public static void main(String[] args) {
-		String request = "http://thinklistenlearn.com/wp-content/uploads/Demo-5.jpg";
 
 		// Setting variables from arguments
 		getInput(args);
@@ -43,7 +43,7 @@ public class PocWebClient {
 			e.printStackTrace();
 		}
 		String protocol = url.getProtocol();
-		if (protocol.contains("http"))
+		if (protocol.contentEquals("http"))
 			// Process request
 			processHttpRequest(REQUEST, PROXY_ADDRESS, PROXY_PORT, FILE_PATH);
 
@@ -51,6 +51,162 @@ public class PocWebClient {
 			processFtpRequest(REQUEST, PROXY_ADDRESS, PROXY_PORT, FTP_USERNAME,
 					FTP_PASSWORD, FILE_PATH);
 
+		else if (protocol.contains("https"))
+			processHttpsRequest(REQUEST, PROXY_ADDRESS, PROXY_PORT, FILE_PATH);
+
+	}
+
+	private static void processHttpsRequest(String request, String address,
+			String proxyPort, String filePath) {
+		try {
+			URL url = new URL(request);
+			System.out.println(url.toString());
+			// Configure the proxy
+			InetSocketAddress proxyAddress = new InetSocketAddress(address,
+					Integer.valueOf(proxyPort));
+			Proxy proxy = new Proxy(Type.HTTP, proxyAddress);
+
+			// Create connection
+			HttpsURLConnection connection = (HttpsURLConnection) url
+					.openConnection(proxy);
+			System.out.println(
+					"Sending request via " + proxy.type() + " proxy server at "
+							+ proxy.address() + "\nWaiting for response...");
+			connection.setRequestMethod("GET");
+			connection.connect();
+
+			int responseCode = connection.getResponseCode();
+			String contentType = connection.getContentType();
+			int contentLength = connection.getContentLength();
+			byte[] data = null;
+			if (responseCode != HttpsURLConnection.HTTP_OK) {
+				BufferedReader reader = new BufferedReader(
+						new InputStreamReader(connection.getInputStream()));
+				String line;
+				StringBuilder response = new StringBuilder();
+				while ((line = reader.readLine()) != null) {
+					response.append(line);
+				}
+				reader.close();
+				System.out.println("Response Content:\n" + response.toString());
+			} else if (responseCode == HttpsURLConnection.HTTP_OK) {
+				if (filePath == null && (contentType.contains("text")
+						|| contentType.contains("html"))) {
+					// Read and print the response content
+					Map<String, List<String>> map = connection
+							.getHeaderFields();
+					for (Entry<String, List<String>> entry : map.entrySet()) {
+						String key = entry.getKey();
+						String value = entry.getValue().get(0);
+						System.out.println(key + ":" + value);
+					}
+					BufferedReader reader = new BufferedReader(
+							new InputStreamReader(connection.getInputStream()));
+					String line;
+					StringBuilder response = new StringBuilder();
+					while ((line = reader.readLine()) != null) {
+						response.append(line);
+					}
+					reader.close();
+					System.out.println(
+							"Response Content:\n" + response.toString());
+				} else {
+					if (filePath != null
+							&& Files.isDirectory(Paths.get(filePath))
+							&& Files.isWritable(Paths.get(filePath))) {
+						try (InputStream raw = connection.getInputStream()) {
+							System.out.println("Response: " + responseCode + " "
+									+ connection.getResponseMessage());
+							Map<String, List<String>> map = connection
+									.getHeaderFields();
+							for (Entry<String, List<String>> entry : map
+									.entrySet()) {
+								String key = entry.getKey();
+								String value = entry.getValue().get(0);
+								System.out.println(key + ":" + value);
+							}
+							InputStream in = new BufferedInputStream(raw);
+							data = new byte[contentLength];
+							int offset = 0;
+							int oldProgress = 0;
+							int currentProgress = 0;
+							while (offset < contentLength) {
+								int bytesRead = in.read(data, offset,
+										data.length - offset);
+								if (bytesRead == -1)
+									break;
+								offset += bytesRead;
+								oldProgress = (int) ((((double) offset)
+										/ ((double) data.length)) * 100d);
+								if (currentProgress < oldProgress) {
+									currentProgress = oldProgress;
+									System.out.printf(
+											"Successfully downloaded: %d%%\n",
+											currentProgress);
+								}
+							}
+							String filename = url.getFile();
+							filename = filePath + UUID.randomUUID() + filename
+									.substring(filename.lastIndexOf('/') + 1);
+							try (FileOutputStream fout = new FileOutputStream(
+									filename)) {
+								fout.write(data);
+								System.out.println(
+										"File downloaded successfully: "
+												+ filename);
+								fout.flush();
+							}
+						}
+					} else {
+						try (InputStream raw = connection.getInputStream()) {
+							Map<String, List<String>> map = connection
+									.getHeaderFields();
+							for (Entry<String, List<String>> entry : map
+									.entrySet()) {
+								String key = entry.getKey();
+								String value = entry.getValue().get(0);
+								System.out.println(key + ":" + value);
+							}
+							InputStream in = new BufferedInputStream(raw);
+							data = new byte[contentLength];
+							int offset = 0;
+							int oldProgress = 0;
+							int currentProgress = 0;
+							while (offset < contentLength) {
+								int bytesRead = in.read(data, offset,
+										data.length - offset);
+								if (bytesRead == -1)
+									break;
+								offset += bytesRead;
+								oldProgress = (int) ((((double) offset)
+										/ ((double) data.length)) * 100d);
+								if (currentProgress < oldProgress) {
+									currentProgress = oldProgress;
+									System.out.printf(
+											"Successfully downloaded: %d%%\n",
+											currentProgress);
+								}
+							}
+							String filename = url.getFile();
+							filename = "./" + UUID.randomUUID() + filename
+									.substring(filename.lastIndexOf('/') + 1);
+							try (FileOutputStream fout = new FileOutputStream(
+									filename)) {
+								fout.write(data);
+								System.out.println(
+										"File downloaded successfully: "
+												+ filename);
+								fout.flush();
+							}
+						}
+					}
+
+				}
+			}
+
+		} catch (Exception ex) {
+			ex.printStackTrace();
+		}
 	}
 
 	private static void processFtpRequest(String rEQUEST2,
@@ -64,146 +220,152 @@ public class PocWebClient {
 			String proxyPort, String filePath) {
 		try {
 			URL url = new URL(request);
-			if (url.getProtocol().contentEquals("http")
-					|| url.getProtocol().contentEquals("https")) {
-				// Configure the proxy
-				InetSocketAddress proxyAddress = new InetSocketAddress(address,
-						Integer.valueOf(proxyPort));
-				Proxy proxy = new Proxy(Type.HTTP, proxyAddress);
 
-				// Create connection
-				HttpURLConnection connection = (HttpURLConnection) url
-						.openConnection(proxy);
-				System.out.println("Sending request via " + proxy.type()
-						+ " proxy server at " + proxy.address()
-						+ "\nWaiting for response...");
-				connection.setRequestMethod("GET");
-				connection.connect();
+			// Configure the proxy
+			InetSocketAddress proxyAddress = new InetSocketAddress(address,
+					Integer.valueOf(proxyPort));
+			Proxy proxy = new Proxy(Type.HTTP, proxyAddress);
 
-				int responseCode = connection.getResponseCode();
-				String contentType = connection.getContentType();
-				byte[] data = null;
-				if (responseCode == HttpURLConnection.HTTP_OK) {
-					if (filePath == null && (contentType.contains("text")
-							|| contentType.contains("html"))) {
-						// Read and print the response content
-						System.out.println("Response: " + responseCode + " " + connection.getResponseMessage());
-						Map<String, List<String>> map = connection.getHeaderFields();
-						for(Entry<String, List<String>> entry : map.entrySet()) {
-							String key = entry.getKey();
-							String value = entry.getValue().get(0);
-							System.out.println(key + ":" + value);
-						}
-						BufferedReader reader = new BufferedReader(
-								new InputStreamReader(
-										connection.getInputStream()));
-						String line;
-						StringBuilder response = new StringBuilder();
-						while ((line = reader.readLine()) != null) {
-							response.append(line);
-						}
-						reader.close();
-						System.out.println(
-								"Response Content:\n" + response.toString());
-					} else {
-						if (filePath != null
-								&& Files.isDirectory(Paths.get(filePath))
-								&& Files.isWritable(Paths.get(filePath))) {
-							try (InputStream raw = connection
-									.getInputStream()) {
-								System.out.println("Response: " + responseCode + " " + connection.getResponseMessage());
-								Map<String, List<String>> map = connection.getHeaderFields();
-								for(Entry<String, List<String>> entry : map.entrySet()) {
-									String key = entry.getKey();
-									String value = entry.getValue().get(0);
-									System.out.println(key + ":" + value);
-								}
-								InputStream in = new BufferedInputStream(raw);
-								data = new byte[8091];
-								int offset = 0;
-								int oldProgress = 0;
-								int currentProgress = 0;
-								while (offset < 8091) {
-									int bytesRead = in.read(data, offset,
-											data.length - offset);
-									if (bytesRead == -1)
-										break;
-									offset += bytesRead;
-									oldProgress = (int) ((((double) offset)
-											/ ((double) data.length)) * 100d);
-									if (currentProgress < oldProgress) {
-										currentProgress = oldProgress;
-										System.out.printf(
-												"Successfully downloaded: %d%%\n",
-												currentProgress);
-									}
-								}
-								String filename = url.getFile();
-								filename = filePath + UUID.randomUUID()
-										+ filename.substring(
-												filename.lastIndexOf('/') + 1);
-								try (FileOutputStream fout = new FileOutputStream(
-										filename)) {
-									fout.write(data);
-									System.out.println(
-											"File downloaded successfully: "
-													+ filename);
-									fout.flush();
-								}
-							}
-						} else {
-							try (InputStream raw = connection
-									.getInputStream()) {
-								System.out.println("Response: " + responseCode + " " + connection.getResponseMessage());
-								Map<String, List<String>> map = connection.getHeaderFields();
-								for(Entry<String, List<String>> entry : map.entrySet()) {
-									String key = entry.getKey();
-									String value = entry.getValue().get(0);
-									System.out.println(key + ":" + value);
-								}
-								InputStream in = new BufferedInputStream(raw);
-								data = new byte[8091];
-								int offset = 0;
-								int oldProgress = 0;
-								int currentProgress = 0;
-								while (offset < 8091) {
-									int bytesRead = in.read(data, offset,
-											data.length - offset);
-									if (bytesRead == -1)
-										break;
-									offset += bytesRead;
-									oldProgress = (int) ((((double) offset)
-											/ ((double) data.length)) * 100d);
-									if (currentProgress < oldProgress) {
-										currentProgress = oldProgress;
-										System.out.printf(
-												"Successfully downloaded: %d%%\n",
-												currentProgress);
-									}
-								}
-								String filename = url.getFile();
-								filename = "./" + UUID.randomUUID()
-										+ filename.substring(
-												filename.lastIndexOf('/') + 1);
-								try (FileOutputStream fout = new FileOutputStream(
-										filename)) {
-									fout.write(data);
-									System.out.println(
-											"File downloaded successfully: "
-													+ filename);
-									fout.flush();
-								}
-							}
-						}
+			// Create connection
+			HttpURLConnection connection = (HttpURLConnection) url
+					.openConnection(proxy);
+			System.out.println(
+					"Sending request via " + proxy.type() + " proxy server at "
+							+ proxy.address() + "\nWaiting for response...");
+			connection.setRequestMethod("GET");
+			connection.connect();
 
+			int responseCode = connection.getResponseCode();
+			String contentType = connection.getContentType();
+			int contentLength = connection.getContentLength();
+			byte[] data = null;
+			if (responseCode != HttpURLConnection.HTTP_OK) {
+				BufferedReader reader = new BufferedReader(
+						new InputStreamReader(connection.getInputStream()));
+				String line;
+				StringBuilder response = new StringBuilder();
+				while ((line = reader.readLine()) != null) {
+					response.append(line);
+				}
+				reader.close();
+				System.out.println("Response Content:\n" + response.toString());
+			} else if (responseCode == HttpURLConnection.HTTP_OK) {
+				if (filePath == null && (contentType.contains("text")
+						|| contentType.contains("html"))) {
+					// Read and print the response content
+					Map<String, List<String>> map = connection
+							.getHeaderFields();
+					for (Entry<String, List<String>> entry : map.entrySet()) {
+						String key = entry.getKey();
+						String value = entry.getValue().get(0);
+						System.out.println(key + ":" + value);
 					}
+					BufferedReader reader = new BufferedReader(
+							new InputStreamReader(connection.getInputStream()));
+					String line;
+					StringBuilder response = new StringBuilder();
+					while ((line = reader.readLine()) != null) {
+						response.append(line);
+					}
+					reader.close();
+					System.out.println(
+							"Response Content:\n" + response.toString());
+				} else {
+					if (filePath != null
+							&& Files.isDirectory(Paths.get(filePath))
+							&& Files.isWritable(Paths.get(filePath))) {
+						try (InputStream raw = connection.getInputStream()) {
+							System.out.println("Response: " + responseCode + " "
+									+ connection.getResponseMessage());
+							Map<String, List<String>> map = connection
+									.getHeaderFields();
+							for (Entry<String, List<String>> entry : map
+									.entrySet()) {
+								String key = entry.getKey();
+								String value = entry.getValue().get(0);
+								System.out.println(key + ":" + value);
+							}
+							InputStream in = new BufferedInputStream(raw);
+							data = new byte[contentLength];
+							int offset = 0;
+							int oldProgress = 0;
+							int currentProgress = 0;
+							while (offset < contentLength) {
+								int bytesRead = in.read(data, offset,
+										data.length - offset);
+								if (bytesRead == -1)
+									break;
+								offset += bytesRead;
+								oldProgress = (int) ((((double) offset)
+										/ ((double) data.length)) * 100d);
+								if (currentProgress < oldProgress) {
+									currentProgress = oldProgress;
+									System.out.printf(
+											"Successfully downloaded: %d%%\n",
+											currentProgress);
+								}
+							}
+							String filename = url.getFile();
+							filename = filePath + UUID.randomUUID() + filename
+									.substring(filename.lastIndexOf('/') + 1);
+							try (FileOutputStream fout = new FileOutputStream(
+									filename)) {
+								fout.write(data);
+								System.out.println(
+										"File downloaded successfully: "
+												+ filename);
+								fout.flush();
+							}
+						}
+					} else {
+						try (InputStream raw = connection.getInputStream()) {
+							Map<String, List<String>> map = connection
+									.getHeaderFields();
+							for (Entry<String, List<String>> entry : map
+									.entrySet()) {
+								String key = entry.getKey();
+								String value = entry.getValue().get(0);
+								System.out.println(key + ":" + value);
+							}
+							InputStream in = new BufferedInputStream(raw);
+							data = new byte[contentLength];
+							int offset = 0;
+							int oldProgress = 0;
+							int currentProgress = 0;
+							while (offset < contentLength) {
+								int bytesRead = in.read(data, offset,
+										data.length - offset);
+								if (bytesRead == -1)
+									break;
+								offset += bytesRead;
+								oldProgress = (int) ((((double) offset)
+										/ ((double) data.length)) * 100d);
+								if (currentProgress < oldProgress) {
+									currentProgress = oldProgress;
+									System.out.printf(
+											"Successfully downloaded: %d%%\n",
+											currentProgress);
+								}
+							}
+							String filename = url.getFile();
+							filename = "./" + UUID.randomUUID() + filename
+									.substring(filename.lastIndexOf('/') + 1);
+							try (FileOutputStream fout = new FileOutputStream(
+									filename)) {
+								fout.write(data);
+								System.out.println(
+										"File downloaded successfully: "
+												+ filename);
+								fout.flush();
+							}
+						}
+					}
+
 				}
 			}
 
 		} catch (Exception ex) {
-
-		} finally {
-
+			ex.printStackTrace();
 		}
 	}
 
