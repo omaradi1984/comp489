@@ -1,0 +1,7 @@
+127.0.0.1 - - [18/Feb/2024:04:34:29 -0500] "GET /testfile.html HTTP/1.1" 404 0
+127.0.0.1 - - [18/Feb/2024:04:36:21 -0500] "GET /testfile.html HTTP/1.1" 404 0
+127.0.0.1 - - [18/Feb/2024:04:38:03 -0500] "GET /testfile.html HTTP/1.1" 404 0
+127.0.0.1 - - [18/Feb/2024:04:38:54 -0500] "GET /testfile.html HTTP/1.1" 200 562
+127.0.0.1 - - [18/Feb/2024:04:46:24 -0500] "GET /testfile.html HTTP/1.1" 200 562
+127.0.0.1 - - [18/Feb/2024:05:31:28 -0500] "GET /testfile.html HTTP/1.1" 200 562
+127.0.0.1 - - [18/Feb/2024:05:31:51 -0500] "GET /testfile.lac HTTP/1.1" 404 0
