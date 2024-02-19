@@ -16,6 +16,8 @@ import java.net.Socket;
 import java.net.URL;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import javax.net.ssl.SSLSocket;
+import javax.net.ssl.SSLSocketFactory;
 
 public class HybridProxyServer {
 	/**
@@ -86,7 +88,7 @@ public class HybridProxyServer {
 
 		@Override
 		public void run() {
-			//Object[] array = new Object[3];
+			// Object[] array = new Object[3];
 			Object[] array = null;
 			try {
 				array = requestProcessor(clientSocket);
@@ -95,31 +97,52 @@ public class HybridProxyServer {
 				e1.printStackTrace();
 			}
 			InputStream in = (InputStream) array[0];
-			String destinationHost =  (String) array[1];
+			String destinationHost = (String) array[1];
 			int destinationPort = (int) array[2];
-			
-			
-			try (Socket serverSocket = new Socket(destinationHost, destinationPort);
-					InputStream fromClient = in;//clientSocket.getInputStream();//(InputStream) array[0];
-					OutputStream toClient = clientSocket.getOutputStream();
-					InputStream fromServer = serverSocket.getInputStream();
-					OutputStream toServer = serverSocket.getOutputStream();) {
-				
-				// Forward client to server
-				Thread clientToServerThread = new Thread(
-						() -> forwardData(fromClient, toServer));
-				clientToServerThread.start();
+			if (destinationPort != 443) {
+				try (Socket serverSocket = new Socket(destinationHost,
+						destinationPort);
+						InputStream fromClient = in;
+						OutputStream toClient = clientSocket.getOutputStream();
+						InputStream fromServer = serverSocket.getInputStream();
+						OutputStream toServer = serverSocket
+								.getOutputStream();) {
 
-				// Forward server to client
-				forwardData(fromServer, toClient);
+					// Forward client to server
+					Thread clientToServerThread = new Thread(
+							() -> forwardData(fromClient, toServer));
+					clientToServerThread.start();
 
-			} catch (Exception e) {
-				e.printStackTrace();
-			} 
+					// Forward server to client
+					forwardData(fromServer, toClient);
+					
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+			} else if (destinationPort == 443) {
+				try{
+		               Socket serverSocket = new Socket(destinationHost, destinationPort != -1 ? destinationPort : 443);
+						InputStream fromClient = in;
+						OutputStream toClient = clientSocket.getOutputStream();
+						InputStream fromServer = serverSocket.getInputStream();
+						OutputStream toServer = serverSocket
+								.getOutputStream();
+					// Forward client to server
+					Thread clientToServerThread = new Thread(
+							() -> forwardData(fromClient, toServer));
+					clientToServerThread.start();
+
+					// Forward server to client
+					forwardData(fromServer, toClient);
+					serverSocket.close();
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+			}
 		}
 
 		private void forwardData(InputStream input, OutputStream output) {
-			
+
 			byte[] buffer = new byte[4096];
 			int read;
 
@@ -134,52 +157,69 @@ public class HybridProxyServer {
 		}
 
 	}
-	public static Object[] requestProcessor(Socket clientSocket) throws IOException {
+	
+	private void httpsForwardData(InputStream input, OutputStream output, String firstLine) {
+
+		byte[] buffer = new byte[4096];
+		int read;
+
+		try {
+			while ((read = input.read(buffer)) != -1) {
+				output.write(buffer, 0, read);
+				output.flush();
+			}
+		} catch (Exception e) {
+			// Connection might be closed, ignore error
+		}
+	}
+	
+	public static Object[] requestProcessor(Socket clientSocket)
+			throws IOException {
 		// TODO Auto-generated method stub
-		Object[] objectArray = new Object[3];
+		Object[] objectArray = new Object[4];
 		InputStream input = clientSocket.getInputStream();
-		
+
 		byte[] array = new byte[1024];
 		int bytesRead = input.read(array);
-		
-		
+
 		String request = new String(array, 0, bytesRead);
 		String firstLine = "";
 		boolean httpsFlag = request.contains(":443");
-		if(httpsFlag == true)
-			firstLine = request.split(" ")[1].split(":")[0];
-		else	
-			firstLine = request.split(" ")[1];
-		System.out.println(firstLine);
-		System.out.println(httpsFlag);
 		URL url = null;
-		try {
-			if(httpsFlag == true)
-				url = new URL("https://"+firstLine);
-			url = new URL(firstLine);
-		} catch (MalformedURLException e) {
-			// TODO Auto-generated catch block
-			OutputStream out = clientSocket.getOutputStream();
-			out.write("Unknown protocol".getBytes());
-			e.printStackTrace();
+		String host = "";
+		int port = 0;
+		if (httpsFlag == true) {
+			firstLine = request.split(" ")[1];
+			host = firstLine.split(":")[0];
+			port = 443;
+		} else {
+			firstLine = request.split(" ")[1];
+			try {
+
+				url = new URL(firstLine);
+				host = url.getHost();
+				if(url.getPort() != -1)
+					port = url.getPort();
+				else if (url.getPort() == -1 && url.getProtocol().contentEquals("ftp"))
+					port = 21;
+				else if (url.getPort() == -1 && url.getProtocol().contentEquals("http"))
+					port = 80;
+
+			} catch (MalformedURLException e) {
+				// TODO Auto-generated catch block
+				OutputStream out = clientSocket.getOutputStream();
+				out.write("Unknown protocol".getBytes());
+				e.printStackTrace();
+			}
 		}
-		String host = url.getHost();
-		int port = url.getPort();
-		
-		InputStream stream = new ByteArrayInputStream(request.getBytes
-                (Charset.forName("UTF-8")));
-		
+		InputStream stream = new ByteArrayInputStream(
+				request.getBytes(Charset.forName("UTF-8")));
+
 		objectArray[0] = stream;
 		objectArray[1] = host;
-		
-		if(port == -1)
-			if(httpsFlag == true)
-				port = 443;
-			else
-				port = 80;
-		System.out.println(port);
 		objectArray[2] = port;
-		
+		objectArray[3] = firstLine;
+
 		return objectArray;
 	}
 }

@@ -14,14 +14,10 @@ import java.net.MalformedURLException;
 import java.net.Proxy;
 import java.net.Socket;
 import java.net.SocketAddress;
-import java.net.SocketException;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.UUID;
-
-import org.apache.commons.net.ftp.FTP;
-import org.apache.commons.net.ftp.FTPClient;
 
 public class FtpClient {
 	/**

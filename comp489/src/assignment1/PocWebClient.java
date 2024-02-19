@@ -1,8 +1,9 @@
-package poc.backup;
+package assignment1;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
@@ -29,7 +30,7 @@ public class PocWebClient {
 
 	public static void main(String[] args) {
 
-		// Setting variables from arguments
+		// Setting variables from arguments http://127.0.0.1:8000/testfile.html
 		getInput(args);
 
 		// Validate user input
@@ -43,7 +44,7 @@ public class PocWebClient {
 			e.printStackTrace();
 		}
 		String protocol = url.getProtocol();
-		if (protocol.contentEquals("http"))
+		if (protocol.contentEquals("http") || protocol.contentEquals("https"))
 			// Process request
 			processHttpRequest(REQUEST, PROXY_ADDRESS, PROXY_PORT, FILE_PATH);
 
@@ -209,11 +210,10 @@ public class PocWebClient {
 		}
 	}
 
-	private static void processFtpRequest(String rEQUEST2,
-			String pROXY_ADDRESS2, String pROXY_PORT2, String fTP_USERNAME2,
-			String fTP_PASSWORD2, String fILE_PATH2) {
+	private static void processFtpRequest(String request, String address,
+			String proxyPort, String username, String password, String filePath) {
 		// TODO Auto-generated method stub
-
+		
 	}
 
 	private static void processHttpRequest(String request, String address,
@@ -240,6 +240,7 @@ public class PocWebClient {
 			int contentLength = connection.getContentLength();
 			byte[] data = null;
 			if (responseCode != HttpURLConnection.HTTP_OK) {
+				System.out.println(responseCode + " " + connection.getResponseMessage());
 				BufferedReader reader = new BufferedReader(
 						new InputStreamReader(connection.getInputStream()));
 				String line;
@@ -258,7 +259,7 @@ public class PocWebClient {
 					for (Entry<String, List<String>> entry : map.entrySet()) {
 						String key = entry.getKey();
 						String value = entry.getValue().get(0);
-						System.out.println(key + ":" + value);
+						System.out.println(key + ": " + value);
 					}
 					BufferedReader reader = new BufferedReader(
 							new InputStreamReader(connection.getInputStream()));
@@ -270,8 +271,53 @@ public class PocWebClient {
 					reader.close();
 					System.out.println(
 							"Response Content:\n" + response.toString());
-				} else {
-					if (filePath != null
+				} else if (filePath == null
+						&& (!contentType.contains("text")
+								|| !contentType.contains("html"))) {
+					try (InputStream raw = connection.getInputStream()) {
+						System.out.println("Response: " + responseCode + " "
+								+ connection.getResponseMessage());
+						Map<String, List<String>> map = connection
+								.getHeaderFields();
+						for (Entry<String, List<String>> entry : map
+								.entrySet()) {
+							String key = entry.getKey();
+							String value = entry.getValue().get(0);
+							System.out.println(key + ":" + value);
+						}
+						InputStream in = new BufferedInputStream(raw);
+						data = new byte[contentLength];
+						int offset = 0;
+						int oldProgress = 0;
+						int currentProgress = 0;
+						while (offset < contentLength) {
+							int bytesRead = in.read(data, offset,
+									data.length - offset);
+							if (bytesRead == -1)
+								break;
+							offset += bytesRead;
+							oldProgress = (int) ((((double) offset)
+									/ ((double) data.length)) * 100d);
+							if (currentProgress < oldProgress) {
+								currentProgress = oldProgress;
+								System.out.printf(
+										"Successfully downloaded: %d%%\n",
+										currentProgress);
+							}
+						}
+						String filename = url.getFile();
+						filename = "./" + UUID.randomUUID() + filename
+								.substring(filename.lastIndexOf('/') + 1);
+						try (FileOutputStream fout = new FileOutputStream(
+								filename)) {
+							fout.write(data);
+							System.out.println(
+									"File downloaded successfully: "
+											+ filename);
+							fout.flush();
+						}
+					}
+			}else if (filePath != null
 							&& Files.isDirectory(Paths.get(filePath))
 							&& Files.isWritable(Paths.get(filePath))) {
 						try (InputStream raw = connection.getInputStream()) {
@@ -317,7 +363,9 @@ public class PocWebClient {
 								fout.flush();
 							}
 						}
-					} else {
+				}else if (filePath != null
+							&& (!Files.isDirectory(Paths.get(filePath))
+							|| !Files.isWritable(Paths.get(filePath)))){
 						try (InputStream raw = connection.getInputStream()) {
 							Map<String, List<String>> map = connection
 									.getHeaderFields();
@@ -362,10 +410,10 @@ public class PocWebClient {
 					}
 
 				}
-			}
 
-		} catch (Exception ex) {
-			ex.printStackTrace();
+		} catch (IOException ex) {
+			//System.out.println(ex.getMessage());
+			//ex.printStackTrace();
 		}
 	}
 
