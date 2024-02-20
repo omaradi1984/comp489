@@ -14,6 +14,7 @@ import java.net.MalformedURLException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.URL;
+import java.net.URLConnection;
 import java.nio.charset.Charset;
 
 /**
@@ -144,8 +145,29 @@ public class ProxyServer {
 						InputStream in = (InputStream) array[0];
 						destinationHost = (String) array[1];
 						destinationPort = (Integer) array[2];
-
-						try (Socket serverSocket = new Socket(destinationHost,
+						
+						try {
+							URL url = new URL(request.split(" ")[1]);
+							URLConnection connection = (URLConnection) url.openConnection();
+							connection.connect();
+							
+							int contentLength = connection.getContentLength();
+							byte[] buffer = new byte[contentLength];
+							int bytesRead;
+							
+							InputStream fromServer = connection.getInputStream();
+							OutputStream toClient = clientSocket.getOutputStream();
+							//fromServer.transferTo(toClient);
+							while ((bytesRead = fromServer.read()) != -1) {
+								toClient.write(buffer, 0, bytesRead);
+							}
+							
+							
+						}catch(Exception ex) {
+							ex.printStackTrace();
+						}
+						
+						/*try (Socket serverSocket = new Socket(destinationHost,
 								destinationPort);
 								InputStream fromClient = in;
 								OutputStream toClient = clientSocket
@@ -166,7 +188,7 @@ public class ProxyServer {
 						} catch (Exception e) {
 							System.out.println("Error processing FTP request.");
 							e.printStackTrace();
-						}
+						}*/
 					}
 				}
 
