@@ -6,8 +6,8 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.net.Proxy.Type;
 //import org.apache.commons.net.ftp.FTPClient;
-import it.sauronsoftware.ftp4j.*;
-import it.sauronsoftware.ftp4j.connectors.HTTPTunnelConnector;
+
+import org.apache.commons.net.ftp.FTPClient;
 
 import java.net.*;
 
@@ -106,8 +106,7 @@ public class FtpClient {
 				
 		try { // Configure the client to use the proxy //
 			// ftpClient.setProxyPort(proxyPort);
-			HTTPTunnelConnector connector = new HTTPTunnelConnector(proxyHost, proxyPort);
-			client.setConnector(connector);
+			
 			//ftpClient.setProxy(proxy);
 			// Connect to the FTP server through the proxy
 			client.connect(server);
@@ -136,7 +135,7 @@ public class FtpClient {
 			}*/
 		} catch (
 
-		IOException | IllegalStateException | FTPIllegalReplyException | FTPException ex) {
+		IOException ex) {
 			ex.printStackTrace();
 		} /*finally {
 			try { // Logout and disconnect from theserver
