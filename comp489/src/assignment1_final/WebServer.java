@@ -121,7 +121,7 @@
  * CODE...
  */
 /** Java core packages */
-package assignment_final;
+package assignment1_final;
 
 import java.io.File;
 import java.io.FileInputStream;

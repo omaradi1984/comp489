@@ -7,6 +7,5 @@
 		</attributes>
 	</classpathentry>
 	<classpathentry kind="lib" path="lib/commons-net-3.9.0.jar" sourcepath="lib/commons-net-3.9.0-sources.jar"/>
-	<classpathentry kind="lib" path="lib/ftp4j-1.7.2.jar" sourcepath="C:/Users/omara/Downloads/ftp4j-1.7.2/ftp4j-1.7.2/doc"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

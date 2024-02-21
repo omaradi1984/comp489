@@ -1,7 +1,99 @@
 /**
- * 
+ * title: ProxyServer.java
+ * description: a proxy server application.
+ * date: December 25, 2023
+ * @author Omar Zohouradi
+ * @version 1.0
  */
-package assignment_final;
+/**
+* DOCUMENTATION...
+*/
+/**
+ *
+ *<H1>Proxy Server</H1>
+ *
+ *<H2>Purpose and Description</H2>
+ *
+ *<P>
+ * An application server that redirects incoming requests for resources.
+ *</P>
+ *<P>
+ * This proxy server redirects client requests if it is http, https or ftp, otherwise it returns a not supported protocol! error.
+ * The user will need to provide the port number when starting the server application in the following way:
+ * java ProxyServer.java <<port>>
+ * Example: java ProxyServer.java 8000
+ *</P>
+ *
+ *<DL>
+ *<DT> Compiling and running instructions</DT>
+ *<DT> Assuming SDK 1.8 (or later) and the CLASSPATH are set up properly.</DT>
+ *<DT> Change to the directory containing the source code.</DT>
+ *<DD> Compile:    javac ProxyServer.java</DD>
+ *<DD> Run:        java ProxyServer  <<port>> <<IP address to listen to>></DD>
+ *<DD> Document:   javadoc ProxyServer.java</DD>
+ *</DL>
+ */
+/**
+*
+* <H3>Classes</H3>
+*
+*<P>
+* public class ProxyServer {<BR>
+* This is the main public class for this http server. It includes several java libraries and private static methods to process incoming requests.
+* example libraries:
+* import java.io.File;
+* import java.io.FileInputStream;
+* import java.io.IOException;
+* import java.io.OutputStream;
+* import java.net.InetSocketAddress;
+* import java.util.HashMap;
+* import java.util.Map;
+*</P>
+*
+*<H2>Parameter arguments</H2>
+*<P>
+* protected static int PORT;
+* protected static int IP_ADDRESS;
+*</P>
+*
+*<H2>Methods</H2>
+*<P>
+* public void handle(HttpExchange t) {<BR>
+* This method will handle the http request coming to the server. It will determine the type of of content-type request. Pass the content type to the client
+* and writes the resource using the outputstream. If the resource doesn't exist, the method will return 404 not found error.
+*</P>
+*<P>
+* public static void logAccess(HttpExchange t, File file,String filePath) {<BR>
+* This method logs access to resource requests. Example: 127.0.0.1 - - [07/Feb./2024:23:15:10 -0500] "GET /testfile.html HTTP/1.1" 200 562.
+* The method will create a log file, if it doesn't already exist, or append an existing one. The log file (access_log) will reside in the application folder.
+*</P>
+<P>
+* public static void logError(HttpExchange t, String filePath, Exception e) {<BR>
+* This method logs errors generated for different reasons. Example: WARNING 127.0.0.1 - - [08/Feb/2024:13:44:09 -0500] "GET /testfile.mp4 HTTP/1.1" 200 || An established connection was aborted by the software in your host machine.
+* The method will create a log file, if it doesn't already exist, or append an existing one. The log file (error_log) will reside in the application folder.
+*</P>
+*<P>
+  public static void main(String args[]) {<BR>
+  This method is used to execute the application
+*</P>
+/**
+ *
+ * <H3>Test Plan</H3>
+ *
+ *<P>
+ * Test case 1: Run the application and pass an available port and optionally an IP address to listen to.
+ * EXPECTED:
+ * If the user passed available port and a number of threads, the application runs as expected.
+ * Test case 2: Using the web client application, send an http, https or ftp request
+ * EXPECTED:
+ * The application returns the expected resource.
+ *</P>
+ */
+/**
+ * CODE...
+ */
+/** Java core packages */
+package assignment1_final;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -145,64 +237,39 @@ public class ProxyServer {
 						InputStream in = (InputStream) array[0];
 						destinationHost = (String) array[1];
 						destinationPort = (Integer) array[2];
-						
+
 						try {
 							URL url = new URL(request.split(" ")[1]);
-							URLConnection connection = (URLConnection) url.openConnection();
+							URLConnection connection = (URLConnection) url
+									.openConnection();
 							connection.connect();
-							
+
 							int contentLength = connection.getContentLength();
 							byte[] buffer = new byte[contentLength];
 							int bytesRead;
-							
-							InputStream fromServer = connection.getInputStream();
-							OutputStream toClient = clientSocket.getOutputStream();
-							//fromServer.transferTo(toClient);
+
+							InputStream fromServer = connection
+									.getInputStream();
+							OutputStream toClient = clientSocket
+									.getOutputStream();
+							// fromServer.transferTo(toClient);
 							while ((bytesRead = fromServer.read()) != -1) {
 								toClient.write(buffer, 0, bytesRead);
 							}
-							
-							
-						}catch(Exception ex) {
+
+						} catch (Exception ex) {
 							ex.printStackTrace();
 						}
-						
-						/*try (Socket serverSocket = new Socket(destinationHost,
-								destinationPort);
-								InputStream fromClient = in;
-								OutputStream toClient = clientSocket
-										.getOutputStream();
-								InputStream fromServer = serverSocket
-										.getInputStream();
-								OutputStream toServer = serverSocket
-										.getOutputStream();) {
 
-							// Forward client to server
-							Thread clientToServerThread = new Thread(
-									() -> forwardData(fromClient, toServer));
-							clientToServerThread.start();
-
-							// Forward server to client
-							forwardData(fromServer, toClient);
-
-						} catch (Exception e) {
-							System.out.println("Error processing FTP request.");
-							e.printStackTrace();
-						}*/
 					}
 				}
 
 				else if (array[0] == null) {
 					request = (String) array[3];
-					// .isBlank() && request.startsWith("CONNECT")
 					destinationHost = request.split(" ")[1].split(":")[0];
 					destinationPort = Integer
 							.parseInt(request.split(" ")[1].split(":")[1]);
 
-					// String header;
-					// do {
-					// header = (String) array[3];
-					// } while (!"".equals(header));
 					OutputStreamWriter outputStreamWriter = new OutputStreamWriter(
 							clientSocket.getOutputStream(), "ISO-8859-1");
 
@@ -254,7 +321,10 @@ public class ProxyServer {
 							} finally {
 								try {
 									clientToRemote.join();
+									clientSocket.close();
+									destinationSocket.close();
 								} catch (InterruptedException e) {
+									System.out.println("This is the error!");
 									e.printStackTrace(); // TODO: implement
 															// catch
 								}
