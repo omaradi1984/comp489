@@ -1,4 +1,4 @@
-package assignment2;
+package assignment2.FileSharingApp;
 
 /**
 * FileSharingApp/FileSharingHolder.java .
@@ -11,7 +11,8 @@ package assignment2;
 // Interface for P2P file sharing services
 public final class FileSharingHolder implements org.omg.CORBA.portable.Streamable
 {
-  public FileSharingApp.FileSharing value = null;
+  public assignment2.FileSharingApp.FileSharing value = null;
+  public String[] str = null;
 
   public FileSharingHolder ()
   {
@@ -24,7 +25,7 @@ public final class FileSharingHolder implements org.omg.CORBA.portable.Streamabl
 
   public void _read (org.omg.CORBA.portable.InputStream i)
   {
-    value = FileSharingHelper.read (i);
+    str = assignment2.FileSharingApp.FileSharingPackage.FileInfoListHelper.read(i);
   }
 
   public void _write (org.omg.CORBA.portable.OutputStream o)

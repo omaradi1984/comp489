@@ -1,4 +1,4 @@
-package assignment2;
+package assignment2.FileSharingApp;
 
 
 /**
@@ -22,9 +22,9 @@ abstract public class FileSharingHelper
     a.read_value (out.create_input_stream (), type ());
   }
 
-  public static FileSharing extract (org.omg.CORBA.Any a)
+  public static String[] extract (org.omg.CORBA.Any a)
   {
-    return read (a.create_input_stream ());
+    return assignment2.FileSharingApp.FileSharingPackage.FileInfoListHelper.read (a.create_input_stream ());
   }
 
   private static org.omg.CORBA.TypeCode __typeCode = null;
@@ -42,7 +42,7 @@ abstract public class FileSharingHelper
     return _id;
   }
 
-  public static FileSharingApp.FileSharing read (org.omg.CORBA.portable.InputStream istream)
+  public static assignment2.FileSharingApp.FileSharing read (org.omg.CORBA.portable.InputStream istream)
   {
     return narrow (istream.read_Object (_FileSharingStub.class));
   }

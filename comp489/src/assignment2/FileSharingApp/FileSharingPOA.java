@@ -1,4 +1,4 @@
-package assignment2;
+package assignment2.FileSharingApp;
 
 
 /**
@@ -68,7 +68,7 @@ public abstract class FileSharingPOA extends org.omg.PortableServer.Servant
          String $result[] = null;
          $result = this.searchFile (filename);
          out = $rh.createReply();
-         FileSharingPackage.FileInfoListHelper.write (out, $result);
+         assignment2.FileSharingApp.FileSharingPackage.FileInfoListHelper.write (out, $result);
          break;
        }
 

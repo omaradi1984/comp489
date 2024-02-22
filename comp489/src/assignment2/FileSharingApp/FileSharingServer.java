@@ -1,6 +1,6 @@
-package assignment2;
+package assignment2.FileSharingApp;
 
-import FileSharingApp.*;
+import assignment2.FileSharingApp.*;
 import org.omg.CosNaming.*;
 import org.omg.CosNaming.NamingContextPackage.*;
 import org.omg.CORBA.*;
@@ -10,6 +10,10 @@ import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 
 import java.util.HashMap;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -18,6 +22,7 @@ class FileSharingImpl extends FileSharingPOA {
     private HashMap<String, List<String>> fileRegistry = new HashMap<>();
     private HashMap<String, String> fileOwner = new HashMap<>();
     private Connection connection = null;
+    private HikariDataSource ds;
     
     public void setORB(ORB orb_val) {
         orb = orb_val;
@@ -120,7 +125,6 @@ class FileSharingImpl extends FileSharingPOA {
         return "";
     }
     }
-}
 
 public class FileSharingServer {
     public static void main(String args[]) {

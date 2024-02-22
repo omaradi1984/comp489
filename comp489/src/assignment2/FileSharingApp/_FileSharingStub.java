@@ -1,4 +1,4 @@
-package assignment2;
+package assignment2.FileSharingApp;
 
 
 /**
@@ -68,7 +68,7 @@ public class _FileSharingStub extends org.omg.CORBA.portable.ObjectImpl implemen
                 org.omg.CORBA.portable.OutputStream $out = _request ("searchFile", true);
                 $out.write_string (filename);
                 $in = _invoke ($out);
-                String $result[] = FileSharingApp.FileSharingPackage.FileInfoListHelper.read ($in);
+                String $result[] = assignment2.FileSharingApp.FileSharingPackage.FileInfoListHelper.read ($in);
                 return $result;
             } catch (org.omg.CORBA.portable.ApplicationException $ex) {
                 $in = $ex.getInputStream ();

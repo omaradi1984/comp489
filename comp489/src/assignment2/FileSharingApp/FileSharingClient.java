@@ -1,6 +1,11 @@
-package assignment2;
+package assignment2.FileSharingApp;
 
-import FileSharingApp.*;
+import assignment2.FileSharingApp.*;
+
+import java.io.IOException;
+import java.net.Socket;
+import java.util.Scanner;
+
 import org.omg.CORBA.*;
 import org.omg.CosNaming.*;
 import org.omg.CosNaming.NamingContextPackage.*;
@@ -30,7 +35,7 @@ public class FileSharingClient {
                 System.out.println("4. Get File Owner");
                 System.out.println("5. Exit");
                 System.out.print("Select an operation (1-5): ");
-
+                String clientID = "123456";
                 int choice = scanner.nextInt();
                 
                 scanner.nextLine(); // Consume newline
@@ -55,10 +60,13 @@ public class FileSharingClient {
                         System.out.println("Invalid choice. Please select a valid operation.");
                         System.exit(1);
                 }
+            }
+        }catch(Exception ex) {
+        	ex.printStackTrace();
+        }
+    }
 
-            String clientID = "123456";
-
-            // Use a temporary socket to a well-known service to discover client's public IP and port
+         /* // Use a temporary socket to a well-known service to discover client's public IP and port
             try (Socket socket = new Socket("google.com", 80)) {
                 String clientAddress = socket.getLocalAddress().getHostAddress();
                 // It's important to note that the local port obtained here may not be externally reachable or consistent
@@ -86,8 +94,7 @@ public class FileSharingClient {
         } catch (Exception e) {
             System.out.println("ERROR : " + e);
             e.printStackTrace(System.out);
-        }
-    }
+        }*/
         private static void registerFile(Scanner scanner) throws Exception {
             System.out.print("Enter filename to register: ");
             String filename = scanner.nextLine();
