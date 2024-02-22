@@ -37,24 +37,16 @@ public class FileSharingClient {
 
                 switch (choice) {
                     case 1:
-                    	String input = scanner.next();
-                    	scanner.nextLine();
-                        registerFile(input);
+                        registerFile(scanner);
                         break;
                     case 2:
-                    	String input = scanner.next();
-                    	scanner.nextLine();
-                        removeFile(input);
+                        removeFile(scanner);
                         break;
                     case 3:
-                    	String input = scanner.next();
-                    	scanner.nextLine();
-                        searchFile(input);
+                        searchFile(scanner);
                         break;
                     case 4:
-                    	String input = scanner.next();
-                    	scanner.nextLine();
-                        getFileOwner(input);
+                        getFileOwner(scanner);
                         break;
                     case 5:
                         System.out.println("Exiting...");
@@ -64,9 +56,7 @@ public class FileSharingClient {
                         System.exit(1);
                 }
 
-            // Extract file details from command-line arguments
-            String filename = args[0];
-            String clientID = args[1];
+            String clientID = "123456";
 
             // Use a temporary socket to a well-known service to discover client's public IP and port
             try (Socket socket = new Socket("google.com", 80)) {
@@ -98,4 +88,43 @@ public class FileSharingClient {
             e.printStackTrace(System.out);
         }
     }
+        private static void registerFile(Scanner scanner) throws Exception {
+            System.out.print("Enter filename to register: ");
+            String filename = scanner.nextLine();
+            String clientID = "client1"; // This can be made dynamic based on your application's requirements
+
+            // Use a temporary socket to a well-known service to discover client's public IP and port
+            try (Socket socket = new Socket("google.com", 80)) {
+                String clientAddress = socket.getLocalAddress().getHostAddress();
+                int clientPort = socket.getLocalPort();
+                
+                fileSharingImpl.registerFile(filename, clientID, clientAddress, String.valueOf(clientPort));
+                System.out.println("File registered successfully.");
+            }
+        }
+
+        private static void removeFile(Scanner scanner) {
+            System.out.print("Enter filename to remove: ");
+            String filename = scanner.nextLine();
+            String clientID = "client1"; // This can be assumed or input by the user
+            fileSharingImpl.removeFile(filename, clientID);
+            System.out.println("File removed successfully.");
+        }
+
+        private static void searchFile(Scanner scanner) {
+            System.out.print("Enter filename to search: ");
+            String filename = scanner.nextLine();
+            String[] files = fileSharingImpl.searchFile(filename);
+            System.out.println("Search results:");
+            for (String file : files) {
+                System.out.println(file);
+            }
+        }
+
+        private static void getFileOwner(Scanner scanner) {
+            System.out.print("Enter filename to get owner: ");
+            String filename = scanner.nextLine();
+            String owner = fileSharingImpl.getFileOwner(filename);
+            System.out.println("File owner: " + owner);
+        }
 }
