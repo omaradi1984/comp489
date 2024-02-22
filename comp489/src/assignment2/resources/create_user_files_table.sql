@@ -1,4 +1,4 @@
-USE file_sharing;
+CREATE DATABASE file_sharing;
 CREATE TABLE user_files (
     user_id INT,
     file_id INT,

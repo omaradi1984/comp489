@@ -1,4 +1,4 @@
-USE file_sharing;
+CREATE DATABASE file_sharing;
 CREATE TABLE files (
     file_id INT AUTO_INCREMENT PRIMARY KEY,
     file_name VARCHAR(255) NOT NULL,

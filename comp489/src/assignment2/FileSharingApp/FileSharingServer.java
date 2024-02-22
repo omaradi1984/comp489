@@ -1,8 +1,6 @@
 package assignment2.FileSharingApp;
 
-import assignment2.FileSharingApp.*;
 import org.omg.CosNaming.*;
-import org.omg.CosNaming.NamingContextPackage.*;
 import org.omg.CORBA.*;
 import org.omg.PortableServer.*;
 import org.omg.PortableServer.POA;
