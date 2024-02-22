@@ -1,0 +1,20 @@
+// FileSharing.idl
+module FileSharingApp {
+    // Interface for P2P file sharing services
+    interface FileSharing {
+        // Registers a file with the server to be shared with others
+        void registerFile(in string filename, in string clientID, in string clientAddress, in string clientPort);
+        
+        // Removes a file from the list of shared files
+        void removeFile(in string filename, in string clientID);
+        
+typedef sequence<string> FileInfoList;
+       
+ // Searches for a file by name and returns a list of files matching the query
+        FileInfoList searchFile(in string filename);
+        
+        // Retrieves the owner information for a specific file
+        string getFileOwner(in string filename);
+    };
+};
+
